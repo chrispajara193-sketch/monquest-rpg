@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MonQuest: Wild Valley — Creature RPG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="console-shell">
+    <!-- Top Status Bar -->
+    <header class="hud-bar">
+      <div class="hud-left">
+        <span class="game-logo">✦ MonQuest</span>
+        <span id="badgePill" class="hud-pill badge-pill">🏆 0/1 Badge</span>
+      </div>
+      <div class="hud-right">
+        <span id="orbCount" class="hud-pill">🔴 5</span>
+        <span id="potionCount" class="hud-pill">🧪 3</span>
+        <button id="partyBtn" class="hud-btn" title="View Party & Monsterdex">Party</button>
+        <button id="soundBtn" class="hud-btn" title="Toggle Sound">🔊</button>
+        <button id="resetBtn" class="hud-btn hud-btn-danger" title="Start New Game">Reset</button>
+      </div>
+    </header>
+
+    <!-- Main Screen Area -->
+    <main class="screen-frame">
+      <!-- Overworld Canvas -->
+      <canvas id="gameCanvas" width="480" height="352"></canvas>
+
+      <!-- Turn-Based Battle View -->
+      <section id="battleView" class="battle-view" hidden>
+        <div class="battle-arena">
+          <!-- Enemy HUD + Sprite -->
+          <div class="combatant-row enemy-row">
+            <div class="stat-box">
+              <div class="stat-top">
+                <strong id="enemyName">Wild Mon</strong>
+                <span id="enemyType" class="type-tag">Normal</span>
+                <span id="enemyLevel" class="lvl-tag">Lv.1</span>
+              </div>
+              <div class="hp-track">
+                <div id="enemyHpBar" class="hp-fill"></div>
+              </div>
+              <div class="hp-meta">
+                <span id="enemyCaughtMark" title="Caught before"></span>
+                <span id="enemyHpText">20/20</span>
+              </div>
+            </div>
+            <div class="sprite-stage enemy-stage">
+              <canvas id="enemySprite" width="96" height="96"></canvas>
+            </div>
+          </div>
+
+          <!-- Player Sprite + HUD -->
+          <div class="combatant-row player-row">
+            <div class="sprite-stage player-stage">
+              <canvas id="playerSprite" width="96" height="96"></canvas>
+            </div>
+            <div class="stat-box">
+              <div class="stat-top">
+                <strong id="playerName">Starter</strong>
+                <span id="playerType" class="type-tag">Fire</span>
+                <span id="playerLevel" class="lvl-tag">Lv.5</span>
+              </div>
+              <div class="hp-track">
+                <div id="playerHpBar" class="hp-fill"></div>
+              </div>
+              <div class="hp-meta">
+                <span id="playerHpText">30/30</span>
+                <span id="playerXpText" class="xp-text">XP 0/25</span>
+              </div>
+              <div class="xp-track">
+                <div id="playerXpBar" class="xp-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battle Log + Action Menu -->
+        <div class="battle-deck">
+          <div id="battleLog" class="battle-log">A wild creature appeared!</div>
+
+          <div id="battleMainMenu" class="battle-actions">
+            <button id="btnFight" class="act-btn act-fight">⚔️ Fight</button>
+            <button id="btnBag" class="act-btn act-bag">🎒 Bag</button>
+            <button id="btnSwitch" class="act-btn act-switch">🔄 Party</button>
+            <button id="btnRun" class="act-btn act-run">🏃 Run</button>
+          </div>
+
+          <div id="battleMovesMenu" class="battle-actions" hidden></div>
+
+          <div id="battleBagMenu" class="battle-actions" hidden>
+            <button id="useOrbBtn" class="act-btn act-bag">🔴 Throw Orb (<span id="bagOrbNum">5</span>)</button>
+            <button id="usePotionBtn" class="act-btn act-heal">🧪 Potion +25 HP (<span id="bagPotionNum">3</span>)</button>
+            <button id="bagBackBtn" class="act-btn act-run">← Back</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overworld Dialog Overlay -->
+      <div id="dialogBox" class="dialog-box" hidden>
+        <p id="dialogText"></p>
+        <span class="dialog-hint">Press Space / Tap A</span>
+      </div>
+
+      <!-- Starter Selection Overlay -->
+      <div id="starterModal" class="overlay-modal">
+        <div class="modal-card">
+          <h1>Welcome to Wild Valley!</h1>
+          <p>Choose your first partner creature to begin your journey:</p>
+          <div id="starterChoices" class="starter-grid"></div>
+        </div>
+      </div>
+
+      <!-- Party & Monsterdex Modal -->
+      <div id="partyModal" class="overlay-modal" hidden>
+        <div class="modal-card modal-wide">
+          <div class="modal-head">
+            <h2 id="partyModalTitle">Your Party &amp; Monsterdex</h2>
+            <button id="closePartyBtn" class="hud-btn">✕</button>
+          </div>
+          <div class="tabs-row">
+            <button id="tabParty" class="tab-btn active">Party (<span id="partyCountLabel">0</span>/6)</button>
+            <button id="tabDex" class="tab-btn">Monsterdex (<span id="dexCountLabel">0</span>/8)</button>
+          </div>
+          <div id="partyList" class="party-list"></div>
+          <div id="dexList" class="dex-grid" hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Handheld Controls Footer -->
+    <footer class="controls-deck">
+      <div class="dpad" aria-label="Directional Pad">
+        <span></span>
+        <button class="pad-btn" data-dir="up" aria-label="Move Up">▲</button>
+        <span></span>
+        <button class="pad-btn" data-dir="left" aria-label="Move Left">◀</button>
+        <span class="pad-center"></span>
+        <button class="pad-btn" data-dir="right" aria-label="Move Right">▶</button>
+        <span></span>
+        <button class="pad-btn" data-dir="down" aria-label="Move Down">▼</button>
+        <span></span>
+      </div>
+
+      <div class="controls-help">
+        <strong>Controls</strong>
+        <p>Move: <kbd>WASD</kbd> / <kbd>Arrows</kbd></p>
+        <p>Talk / Interact: <kbd>Space</kbd> / <kbd>Enter</kbd></p>
+        <p>Walk in tall grass to find wild monsters!</p>
+      </div>
+
+      <div class="ab-buttons">
+        <button id="btnB" class="round-btn btn-b" aria-label="Back">B</button>
+        <button id="btnA" class="round-btn btn-a" aria-label="Interact">A</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
